@@ -1,13 +1,8 @@
 const bcrypt = require('bcrypt')
 
 function passwordHash(myPlaintextPassword) {
-    bcrypt.hash(myPlaintextPassword, 10, function (err, hash) {
-        try {
-            return hash;
-        } catch (err) {
-            res.status(err);
-        }
-    });
+    const hash = bcrypt.hashSync(myPlaintextPassword, 15);
+    return hash;
 }
 
-module.exports = passwordHash;
+module.exports = { passwordHash };

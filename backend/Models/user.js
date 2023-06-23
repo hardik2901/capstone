@@ -1,36 +1,6 @@
-// const mongoose = require('mongoose')
-
-// const homePageSchema = new mongoose.Schema({
-
-//     title: {
-//         type: String,
-//         default: "",
-//     },
-//     coverPhoto: {
-//         type: String,
-//         default: "",
-//     },
-//     discription: {
-//         type: String,
-//         default: "",
-//     },
-//     Location: {
-//         type: String,
-//         default: "",
-//     }, rawHtml: {
-//         type: String,
-//         default: "",
-//     }
-// }, { timestamps: true }
-// );
-
-// const homePage = mongoose.model('homePage', homePageSchema)
-
-// module.export = homePage
-
-
 const mongoose = require('mongoose')
 const { isEmail } = require('validator')
+const bcrypt = require('bcrypt')
 
 const userSchema = new mongoose.Schema({
 
@@ -80,10 +50,26 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: ""
+    },
+    otpCodes: {
+        type: String,
+        default: ""
     }
-
 }, { timestamps: true }
 );
+
+userSchema.methods.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password)
+}
+
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        next()
+    }
+
+    const salt = await bcrypt.genSalt(15)
+    this.password = await bcrypt.hash(this.password, salt)
+})
 
 const user = mongoose.model('user', userSchema);
 

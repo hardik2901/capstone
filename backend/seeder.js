@@ -3,12 +3,15 @@ const dotenv = require('dotenv')
 const userData = require('./Data/user.js')
 const connectDB = require('./config/db.js')
 const user = require('./Models/user.js');
+const { passwordHash } = require('./utils/passwordHash.js')
 
 dotenv.config();
 connectDB();
-console.log(user);
 const importData = async () => {
     try {
+        userData.forEach(element => {
+            element.password = passwordHash(element.password)
+        });
         const temp = await user.insertMany(userData)
         console.log('Data Imported!')
         process.exit()
