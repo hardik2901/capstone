@@ -1,4 +1,4 @@
-const user = require('../Models/user')
+const User = require('../Models/User')
 const bcrypt = require('bcrypt')
 const asyncHandler = require('express-async-handler')
 const generateToken = require('../utils/generateToken')
@@ -12,7 +12,7 @@ const login = asyncHandler(async (req, res) => {
     console.log(req.body);
 
     try {
-        const userData = await user.findOne({ email: email });
+        const userData = await User.findOne({ email: email });
         console.log(userData)
         const matchPassword = await bcrypt.compare(password, userData.password);
         console.log(matchPassword)

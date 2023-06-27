@@ -12,7 +12,7 @@ async function sendEmail(toClient) {
             pass: process.env.PASSWORD
         }
     });
-    let otp = Math.round(Math.random() * 1000000);
+    let otp = Math.round(Math.random() * 900000) + 100000;
     // Create the email message
     let message = {
         from: process.env.EMAIL,
@@ -22,7 +22,8 @@ async function sendEmail(toClient) {
     };
 
     try {
-        // let info = await transporter.sendMail(message);
+        let info = await transporter.sendMail(message);
+        // console.log(info);
         return `Email sent ${otp}`;
     } catch (error) {
 

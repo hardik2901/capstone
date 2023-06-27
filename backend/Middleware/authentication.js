@@ -1,7 +1,7 @@
 
 const { decode } = require('jsonwebtoken')
 const jwt = require('jsonwebtoken')
-const user = require('../Models/user')
+const User = require('../Models/User')
 
 const protect = async (req, res, next) => {
     let token
@@ -14,11 +14,9 @@ const protect = async (req, res, next) => {
             token = req.headers.authorization.split(' ')[1]
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET)
-            const userDetails = await user.findOne({ email: req.body.email });
 
-            if (decoded.id !== userDetails._id.toString()) {
-                throw new Error
-            }
+            req.user = await User.findById(decoded.id);
+
             next()
         } catch (error) {
             console.log(error);
@@ -37,9 +35,24 @@ const protect = async (req, res, next) => {
     }
 }
 
+const user = async (req, res, next) => {
+    try {
+        if (req.user && req.user._id == req.body.id) {
+            next();
+        } else {
+            throw new "Not authorized Admin, token failed"
+        }
+    } catch (err) {
+        res.status(401)
+        res.json({
+            "message": "Not authorized Admin, token failed"
+        })
+    }
+}
+
 const admin = async (req, res, next) => {
     try {
-        if (req.body != null && req.body.isAdmin == true) {
+        if (req.user != null && req.user.isAdmin == true) {
             next()
         } else {
             res.status(401)
@@ -59,7 +72,7 @@ const admin = async (req, res, next) => {
 const dean = (req, res, next) => {
 
     try {
-        if (req.body && (req.body.isDean || req.body.isAdmin)) {
+        if (req.user && (req.user.isDean || req.user.isAdmin)) {
             next()
         } else {
             res.status(401)
@@ -79,7 +92,7 @@ const dean = (req, res, next) => {
 const sportsIncharge = (req, res, next) => {
 
     try {
-        if (req.body && (req.body.isSportIncharge || req.body.isAdmin)) {
+        if (req.body && (req.user.isSportIncharge || req.user.isAdmin)) {
             next()
         } else {
             res.status(401)
@@ -99,7 +112,7 @@ const sportsIncharge = (req, res, next) => {
 const caretaker = (req, res, next) => {
 
     try {
-        if (req.body && (req.body.isCareTaker || req.body.isAdmin)) {
+        if (req.body && (req.user.isCareTaker || req.user.isAdmin)) {
             next()
         } else {
             res.status(401)
@@ -116,4 +129,4 @@ const caretaker = (req, res, next) => {
 
 }
 
-module.exports = { protect, admin, caretaker, sportsIncharge, dean }
+module.exports = { protect, user, admin, caretaker, sportsIncharge, dean }

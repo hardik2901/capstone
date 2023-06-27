@@ -2,7 +2,11 @@ const mongoose = require('mongoose')
 const dotenv = require('dotenv')
 const userData = require('./Data/user.js')
 const connectDB = require('./config/db.js')
-const user = require('./Models/user.js');
+const User = require('./Models/User.js');
+const rooms = require('./Data/room.js')
+const Room = require('./Models/Room.js')
+const bookingRequestData = require('./Data/roomBookRequest.js')
+const roomBookRequest = require('./Models/roomBookRequest.js')
 const { passwordHash } = require('./utils/passwordHash.js')
 
 dotenv.config();
@@ -12,7 +16,7 @@ const importData = async () => {
         userData.forEach(element => {
             element.password = passwordHash(element.password)
         });
-        const temp = await user.insertMany(userData)
+        const temp = await User.insertMany(userData)
         console.log('Data Imported!')
         process.exit()
     } catch (error) {
@@ -21,9 +25,35 @@ const importData = async () => {
     }
 }
 
+const importDataRoom = async () => {
+    try {
+        const temp = await Room.insertMany(rooms)
+        console.log('Data Imported!')
+
+        process.exit()
+    } catch (error) {
+        console.log(error);
+        process.exit(1)
+    }
+}
+
+const importDataRoomRequest = async () => {
+    try {
+        const temp = await roomBookRequest.insertMany(bookingRequestData)
+        console.log('Data Imported!')
+
+        process.exit()
+    } catch (error) {
+        console.log(error);
+        process.exit(1)
+    }
+}
+
+
 const destroyData = async () => {
     try {
-        await user.deleteMany()
+        await User.deleteMany()
+        await Room.deleteMany()
         console.log('Data Deleted!')
         process.exit()
     } catch (error) {
@@ -34,6 +64,11 @@ const destroyData = async () => {
 
 if (process.argv[2] === '-d') {
     destroyData()
-} else {
+} else if (process.argv[2] == '-b') {
+    importDataRoomRequest();
+}
+else if (process.argv[2] == '-u') {
     importData()
+} else if (process.argv[2] == '-r') {
+    importDataRoom()
 }

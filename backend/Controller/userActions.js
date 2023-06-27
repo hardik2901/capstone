@@ -1,8 +1,9 @@
 const asyncHandler = require('express-async-handler')
-const user = require('../Models/user')
+const User = require('../Models/User')
 const bcrypt = require('bcrypt')
 const { passwordHash } = require('../utils/passwordHash')
 const sendEmail = require('../utils/mail')
+const room = require('../Models/Room')
 
 // API/LOGIN
 // POST
@@ -11,7 +12,7 @@ const sendEmail = require('../utils/mail')
 const getalluser = asyncHandler(async (req, res) => {
 
     try {
-        const documents = await user.find({});
+        const documents = await User.find({});
         console.log(documents);
         res.json(documents);
     } catch (error) {
@@ -22,8 +23,8 @@ const getalluser = asyncHandler(async (req, res) => {
 
 const getSingleUser = asyncHandler(async (req, res) => {
     try {
-        const userID = req.params.id;
-        const userData = await user.findById({ _id: userID });
+        const userID = req.user._id;
+        const userData = await User.findById({ _id: userID });
 
         if (userData != null) {
             res.json(userData);
@@ -40,11 +41,11 @@ const getSingleUser = asyncHandler(async (req, res) => {
 const updateUserDetails = asyncHandler(async (req, res) => {
 
     const newDetails = req.body;
-    const userId = req.params.id;
+    const userId = req.user._id;
     try {
 
 
-        const userDetails = await user.findById(userId);
+        const userDetails = await User.findById(userId);
         if (userDetails != null) {
             userDetails.firstName = newDetails.firstName || userDetails.firstName;
             userDetails.lastName = newDetails.lastName || userDetails.lastName;
@@ -74,9 +75,9 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 })
 
 const forgetPassword = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-    const userDetails = await user.findOne({ email: email });
 
+    const userDetails = await User.findOne(req.user._id);
+    const { email } = req.body;
     try {
         if (userDetails != null) {
             const checkmailStatus = (await sendEmail(email)).toString();
@@ -104,7 +105,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
 
     try {
         const { email, otpCodes } = req.body;
-        const userDetails = await user.findOne({ email: email })
+        const userDetails = await User.findOne({ email: email })
         if (userDetails != null) {
             const otpCodeString = userDetails.otpCodes;
             const storedOtp = (otpCodeString.split(' ')[0]).toString();
@@ -129,6 +130,8 @@ const verifyOtp = asyncHandler(async (req, res) => {
         res.send("Invalid Otp Entered");
     }
 })
+
+
 
 module.exports = { getalluser, getSingleUser, updateUserDetails, forgetPassword, verifyOtp }
 
