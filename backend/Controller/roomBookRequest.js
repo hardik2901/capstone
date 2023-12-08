@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler')
 const Room = require('../Models/Room')
-const roomBookRequest = require('../Models/roomBookRequest')
+const roomBookRequest = require('../Models/roomBookRequest');
+const User = require('../Models/User');
 
 function doDateRangesIntersect(start1, end1, start2, end2) {
     return start1 <= end2 && start2 <= end1;
@@ -27,24 +28,36 @@ const bookRoom = asyncHandler(async (req, res) => {
             bookedBy: request.bookedBy,
             room: request.room
         });
-        res.send(request);
+        res.json({ "message": "Room Booked Successfully" });
     } catch (err) {
-        res.send(err);
+        res.status(500).send(err);
     }
 });
 
 const getAllRequests = asyncHandler(async (req, res) => {
     try {
-        const { type } = req.body;
-        if (type == "all") {
-            res.send(await roomBookRequest.find({}));
-        }
-        else {
-            res.send(await roomBookRequest.find({ status: type }));
-        }
+        let requests = await roomBookRequest.find({ status: 'pending' }).lean();
+        let answer = [];
+        for (let request of requests) {
+            const userDetails = await User.findById(request.bookedBy);
+            const roomDetails = await Room.findById(request.room);
+            request.startDate = new Date(request.startDate).toLocaleDateString()
+            request.endDate = new Date(request.endDate).toLocaleDateString()
+            answer.push(
+                {
+                    ...request,
+                    'block': roomDetails.block,
+                    'id': request._id,
+                    'roomNumber': roomDetails.roomNumber,
+                    'name': userDetails.firstName + ' ' + userDetails.lastName
 
+                })
+
+
+        }
+        res.send(answer);
     } catch (err) {
-        res.send(err);
+        res.status(500).send(err);
     }
 })
 

@@ -12,7 +12,8 @@ const login = asyncHandler(async (req, res) => {
     console.log(req.body);
 
     try {
-        const userData = await User.findOne({ email: email });
+        const userData = await User.findOne({ email });
+        if (userData == null) throw new Error("Invalid email or password")
         console.log(userData)
         const matchPassword = await bcrypt.compare(password, userData.password);
         console.log(matchPassword)
@@ -29,12 +30,9 @@ const login = asyncHandler(async (req, res) => {
                 token: generateToken(userData._id)
             })
         } else {
-            res.status(401);
             res.json({ "message": "Error while logging in" })
         }
     } catch (err) {
-        res.status(401);
-        console.log(err);
         res.json({ "message": "Some other error might be invalid email or password" })
     }
 })

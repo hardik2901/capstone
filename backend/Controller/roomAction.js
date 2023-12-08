@@ -23,37 +23,53 @@ const getRoomById = asyncHandler(async (req, res) => {
 
 const getRoomByFilter = asyncHandler(async (req, res) => {
     try {
-        const startDate = req.query.startDate ? new Date(Number(req.query.startDate)) : null;
-        const endDate = req.query.endDate ? new Date(Number(req.query.endDate)) : null;
-        const minCapacity = req.query.minCapacity ? Number(req.query.minCapacity) : null;
-        const isAcRequired = req.query.isAcRequired ? (req.query.isAcRequired === "true") : undefined;
-        const blockPreference = req.query.blockPreference || null;
+        const startDate = req.body.startDate ? new Date(Number(req.body.startDate)) : null;
+        const endDate = req.body.endDate ? new Date(Number(req.body.endDate)) : null;
+        const minCapacity = req.body.value[0];
+        const isAcRequired = req.body.ac;
+        const blockPreference = req.body.blocks
 
-        const query = {};
-        if (startDate && endDate) {
-            query.booking = {
-                $not: {
-                    $elemMatch: {
-                        startDate: { $lt: endDate },
-                        endDate: { $gt: startDate }
-                    }
-                }
+        const allRoom = await Room.find();
+        let filteredRooms = []
+        allRoom.forEach(room => {
+            let check = true;
+            if (room.isAc != isAcRequired) {
+                return;
             }
-        }
-        if (blockPreference) {
-            query.block = blockPreference;
-        }
+            if (blockPreference && !blockPreference.includes(room.block)) {
 
-        if (isAcRequired) {
-            query.isAc = isAcRequired
-        }
+                return;
+            }
+            if (minCapacity > room.capacity) {
 
-        if (minCapacity) {
-            query.capacity = { $gte: minCapacity };
-        }
-        const rooms = Room.find(query)
+                return;
+            }
+            if (check) {
+                room.bookings.forEach(booking => {
+                    if (startDate != null && endDate !== null && ((startDate <= booking.startDate && endDate >= booking.startDate) || (startDate >= booking.startDate && endDate <= booking.endDate) || (startDate <= booking.endDate && endDate >= booking.endDate))) {
+                        check = false;
+                        return;
+                    }
+                    else if (startDate != null && startDate >= booking.startDate && startDate <= booking.endDate) {
+                        check = false;
+                        return;
+                    }
+                    else if (endDate != null && endDate >= booking.startDate && endDate <= booking.endDate) {
+                        check = false;
+                        return;
+                    }
 
-        res.send(rooms);
+                })
+            }
+
+            if (check) {
+                filteredRooms.push(room)
+            }
+
+
+        });
+        res.send(filteredRooms)
+
     } catch (err) {
         console.log(err);
         res.send(err);

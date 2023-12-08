@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt')
 const { passwordHash } = require('../utils/passwordHash')
 const sendEmail = require('../utils/mail')
 const room = require('../Models/Room')
+const generateToken = require('../utils/generateToken')
 
 // API/LOGIN
 // POST
@@ -34,7 +35,7 @@ const getSingleUser = asyncHandler(async (req, res) => {
         }
     }
     catch (err) {
-        res.send(err);
+        res.status(403).send(err);
     }
 })
 
@@ -43,41 +44,25 @@ const updateUserDetails = asyncHandler(async (req, res) => {
     const newDetails = req.body;
     const userId = req.user._id;
     try {
-
-
         const userDetails = await User.findById(userId);
         if (userDetails != null) {
-            userDetails.firstName = newDetails.firstName || userDetails.firstName;
-            userDetails.lastName = newDetails.lastName || userDetails.lastName;
-            userDetails.phoneNumber = newDetails.phoneNumber || userDetails.phoneNumber;
-            userDetails.profilePhoto = newDetails.profilePhoto || userDetails.profilePhoto;
-
-            if (newDetails.password != null && newDetails.currentPassword != null) {
-                console.log("hello");
-                const matchPassword = await bcrypt.compare(newDetails.currentPassword, userDetails.password);
-                console.log(matchPassword);
-                if (matchPassword) {
-                    userDetails.password = passwordHash(newDetails.password);
-                }
-                else {
-                    throw "Password Entered in the current password field does not match with the actual current password";
-                }
-            }
-            else {
-                throw "Password Entered in the current password field does not match with the actual current password";
-            }
-            userDetails.save();
-            res.json(userDetails);
+            userDetails.password = newDetails.password;
         }
+        else {
+            throw "No User Found";
+        }
+        userDetails.save();
+        res.json(userDetails);
     } catch (err) {
-        res.json(err);
+        res.status(500).json(err);
     }
 })
 
 const forgetPassword = asyncHandler(async (req, res) => {
 
-    const userDetails = await User.findOne(req.user._id);
+    console.log('here');
     const { email } = req.body;
+    const userDetails = await User.findOne({ email: email });
     try {
         if (userDetails != null) {
             const checkmailStatus = (await sendEmail(email)).toString();
@@ -115,10 +100,10 @@ const verifyOtp = asyncHandler(async (req, res) => {
 
             if (new Date() - otpDate <= 300000) {
                 if (otpCodes == storedOtp) {
-                    res.send(true);
+                    res.json({ "status": true, "user": userDetails, token: generateToken(userDetails._id) });
                 }
                 else {
-                    res.send(false);
+                    res.send({ "status": false });
                 }
             }
             else {
@@ -127,7 +112,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
         }
     } catch (error) {
         console.log(error);
-        res.send("Invalid Otp Entered");
+        res.status(400).send("Invalid Otp Entered");
     }
 })
 
